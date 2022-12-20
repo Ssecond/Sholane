@@ -34,12 +34,10 @@ namespace Sholane.TextureProcess
 
             coordinates = new float[]
             {
-                0.0f, 0.0f, // Левый нижний
-                1.0f, 0.0f, // Правый нижний
-                1.0f, 1.0f, // Правый верхний
-                0.0f, 1.0f, // Левый верхний
-                
-                
+                0.0f, 0.0f, // Bottom left
+                1.0f, 0.0f, // Bottom right
+                1.0f, 1.0f, // Upper right
+                0.0f, 1.0f, // Upper left
             };
             bufferID = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, bufferID);

@@ -16,16 +16,6 @@ namespace Sholane
         {
             VSync = VSyncMode.On;
             GL.Enable(EnableCap.Texture2D);
-            GL.Enable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.AlphaTest);
-            GL.Enable(EnableCap.CullFace);
-            GL.Enable(EnableCap.PointSmooth);
-            GL.Enable(EnableCap.LineSmooth);
-            GL.Enable(EnableCap.PolygonSmooth);
-            GL.Enable(EnableCap.Multisample);
-            GL.BlendFunc(BlendingFactor.Src1Alpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.FrontFace(FrontFaceDirection.Cw);
-            GL.CullFace(CullFaceMode.Back);
 
             background = new Background(nSettings.Size.X, nSettings.Size.Y, "Content\\StartButton.png");
         }
@@ -33,8 +23,6 @@ namespace Sholane
         protected override void OnLoad()
         {
             base.OnLoad();
-
-            // texture = new Texture2D(@"Content/StartButton.png");
         }
         protected override void OnUnload()
         {
@@ -70,26 +58,6 @@ namespace Sholane
 
             background.Draw();
             GL.LoadIdentity();
-            //GL.BindTexture(TextureTarget.Texture2D, texture.ID);
-            //GL.Begin(PrimitiveType.Quads);
-
-            //#region poly
-            ////GL.Color3(Color.Red);
-            //GL.TexCoord2(1.0f, 0.0f);
-            //GL.Vertex2(0.0f, 0.0f);
-
-            ////GL.Color3(Color.Blue);
-            //GL.TexCoord2(0.0f, 0.0f);
-            //GL.Vertex2(1.0f, 0.0f);
-
-            ////GL.Color3(Color.Orange);
-            //GL.TexCoord2(1.0f, 1.0f);
-            //GL.Vertex2(1.0f, -1.0f);
-
-            //// GL.Color3(Color.Green);
-            //GL.TexCoord2(0.0f, 1.0f);
-            //GL.Vertex2(0.0f, -1.0f);
-            //#endregion
             GL.End();
 
             SwapBuffers();

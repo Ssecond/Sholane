@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using OpenTK.Graphics.OpenGL;
+﻿using OpenTK.Graphics.OpenGL;
 
 namespace Sholane.TextureProcess
 {
@@ -31,13 +26,6 @@ namespace Sholane.TextureProcess
         }
         internal void Resize(int width, int height)
         {
-            vertexData = new float[]
-            {
-                0.0f, 0.0f,
-                width, 0.0f,
-                width, height,
-                0.0f, height,
-            };
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferID);
             GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
