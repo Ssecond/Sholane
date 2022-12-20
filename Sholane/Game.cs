@@ -14,7 +14,7 @@ namespace Sholane
         Entity entity, background;
         internal Game(GameWindowSettings gSettings, NativeWindowSettings nSettings) : base(gSettings, nSettings)
         {
-            VSync = VSyncMode.Off;
+            VSync = VSyncMode.On;
             GL.Enable(EnableCap.Texture2D);
 
             entity = new Entity(33, 60, "Content\\Rocket.png", Vector2.Zero, BufferUsageHint.DynamicDraw);
@@ -44,24 +44,21 @@ namespace Sholane
 
             background.Resize(this.Size.X, this.Size.Y);
         }
+        double lag = 0, TIME_PER_FRAME = 0.001;
+        Keys lastKeyboardState;
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
 
-
-            if (KeyboardState.IsKeyDown(Keys.Escape))
-                Close();
-
-            if (KeyboardState.IsKeyDown(Keys.W) || KeyboardState.IsKeyDown(Keys.Up))
-                entity.Move(new Vector2(-0.0f, -0.1f));
-            if (KeyboardState.IsKeyDown(Keys.A) || KeyboardState.IsKeyDown(Keys.Left))
-                entity.Move(new Vector2(-0.1f, 0.0f));
-            if (KeyboardState.IsKeyDown(Keys.S) || KeyboardState.IsKeyDown(Keys.Down))
-                entity.Move(new Vector2(0.0f, 0.1f));
-            if (KeyboardState.IsKeyDown(Keys.D) || KeyboardState.IsKeyDown(Keys.Right))
-                entity.Move(new Vector2(0.1f, 0.0f));
-
-
+            lag += args.Time;
+            if (lag > TIME_PER_FRAME)
+            {
+                while (lag > TIME_PER_FRAME)
+                {
+                    KeyPressedMoveTheEntity(lastKeyboardState);
+                    lag -= TIME_PER_FRAME;
+                }
+            }
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
@@ -74,6 +71,40 @@ namespace Sholane
             GL.End();
 
             SwapBuffers();
+        }
+        protected override void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            lastKeyboardState = e.Key;
+        }
+        private void KeyPressedMoveTheEntity(Keys key)
+        {
+            switch (key)
+            {
+                case Keys.Up:
+                case Keys.W:
+                    entity.Move(new Vector2(-0.0f, -0.1f));
+                    break;
+
+                case Keys.Left:
+                case Keys.A:
+                    entity.Move(new Vector2(-0.1f, 0.0f));
+                    break;
+
+                case Keys.Down:
+                case Keys.S:
+                    entity.Move(new Vector2(0.0f, 0.1f));
+                    break;
+
+                case Keys.Right:
+                case Keys.D:
+                    entity.Move(new Vector2(0.1f, 0.0f));
+                    break;
+
+                case Keys.Escape:
+                    Close();
+                    break;
+            }
         }
     }
 }
