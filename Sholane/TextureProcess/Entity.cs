@@ -1,22 +1,43 @@
 ﻿using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
 
 namespace Sholane.TextureProcess
 {
-    internal class Background : IDisposable
+    internal class Entity : IDisposable
     {
-        private int vertexBufferID;
+        private int vertexBufferID, width, height;
         private float[] vertexData;
         private Texture2D texture;
+        private Vector2 position;
 
-        public Background(int width, int height, string path)
+        public Entity(int width, int height, string path, Vector2 position)
         {
             texture = new Texture2D(path);
+            this.position = position;
+            this.width = width;
+            this.height = height;
             vertexData = new float[]
             {
-                0.0f, 0.0f,
-                width, 0.0f,
-                width, height,
-                0.0f, height,
+                position.X + 0.0f,  position.Y + 0.0f, // Upper left
+                position.X + width, position.Y + 0.0f, // Upper right
+                position.X + width, position.Y + height, // Bottom right
+                position.X + 0.0f,  position.Y + height, // Bottom left
+            };
+
+            vertexBufferID = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferID);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+        }
+        internal void Move(Vector2 vector)
+        {
+            position += vector;
+            vertexData = new float[]
+            {
+                position.X + 0.0f,  position.Y + 0.0f, // Upper left
+                position.X + width, position.Y + 0.0f, // Upper right
+                position.X + width, position.Y + height, // Bottom right
+                position.X + 0.0f,  position.Y + height, // Bottom left
             };
 
             vertexBufferID = GL.GenBuffer();
@@ -26,6 +47,13 @@ namespace Sholane.TextureProcess
         }
         internal void Resize(int width, int height)
         {
+            vertexData = new float[]
+            {
+                0.0f, 0.0f,
+                width, 0.0f,
+                width, height,
+                0.0f, height,
+            };
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferID);
             GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
@@ -55,7 +83,8 @@ namespace Sholane.TextureProcess
         }
         public void Dispose()
         {
-            throw new NotImplementedException();
+            texture.Dispose();
+            GL.DeleteBuffer(vertexBufferID);
         }
     }
 }
