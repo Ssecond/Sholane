@@ -17,8 +17,8 @@ namespace Sholane
             VSync = VSyncMode.Off;
             GL.Enable(EnableCap.Texture2D);
 
-            entity = new Entity(100, 50, "Content\\StartButton.png", Vector2.Zero);
-            background = new Entity(nSettings.Size.X, nSettings.Size.Y, "Content\\StartButton.png", Vector2.Zero);
+            entity = new Entity(33, 60, "Content\\Rocket.png", Vector2.Zero, BufferUsageHint.DynamicDraw);
+            background = new Entity(nSettings.Size.X, nSettings.Size.Y, "Content\\Sky.jpg", Vector2.Zero);
         }
 
         protected override void OnLoad()
@@ -42,7 +42,7 @@ namespace Sholane
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
 
-           background.Resize(this.Size.X, this.Size.Y);
+            background.Resize(this.Size.X, this.Size.Y);
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
@@ -60,12 +60,13 @@ namespace Sholane
                 entity.Move(new Vector2(0.0f, 0.1f));
             if (KeyboardState.IsKeyDown(Keys.D) || KeyboardState.IsKeyDown(Keys.Right))
                 entity.Move(new Vector2(0.1f, 0.0f));
+
+
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             base.OnRenderFrame(args);
             GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
-            GL.ClearColor(Color.Black);
 
             background.Draw();
             entity.Draw();

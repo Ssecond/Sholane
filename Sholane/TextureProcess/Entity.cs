@@ -9,13 +9,15 @@ namespace Sholane.TextureProcess
         private float[] vertexData;
         private Texture2D texture;
         private Vector2 position;
+        private BufferUsageHint bufferUsageHint;
 
-        public Entity(int width, int height, string path, Vector2 position)
+        public Entity(int width, int height, string path, Vector2 position, BufferUsageHint bufferUsageHint = BufferUsageHint.StaticDraw)
         {
             texture = new Texture2D(path);
             this.position = position;
             this.width = width;
             this.height = height;
+            this.bufferUsageHint = bufferUsageHint;
             vertexData = new float[]
             {
                 position.X + 0.0f,  position.Y + 0.0f, // Upper left
@@ -26,7 +28,7 @@ namespace Sholane.TextureProcess
 
             vertexBufferID = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferID);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, bufferUsageHint);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
         internal void Move(Vector2 vector)
@@ -42,7 +44,7 @@ namespace Sholane.TextureProcess
 
             vertexBufferID = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferID);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, bufferUsageHint);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
         internal void Resize(int width, int height)
@@ -55,7 +57,7 @@ namespace Sholane.TextureProcess
                 0.0f, height,
             };
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferID);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, bufferUsageHint);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
         internal void Draw()
@@ -73,11 +75,14 @@ namespace Sholane.TextureProcess
         }
         private void EnableStates()
         {
+            GL.Enable(EnableCap.Blend);// Подключаем режим отображения текстур
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.EnableClientState(ArrayCap.VertexArray);
             GL.EnableClientState(ArrayCap.TextureCoordArray);
         }
         private void DisableStates()
         {
+            GL.Disable(EnableCap.Blend);
             GL.DisableClientState(ArrayCap.VertexArray);
             GL.DisableClientState(ArrayCap.TextureCoordArray);
         }
