@@ -9,9 +9,11 @@ namespace Sholane
 {
     internal class Game : GameWindow
     {
-        const float deltaMove = 0.1f;
+        const float deltaMove = 0.05f;
         private Matrix4 ortho;
-        private Entity rocket, plane, background;
+        private Entity rocket, background;
+        private List<Entity> planes = new List<Entity>();
+        private List<Entity> platforms = new List<Entity>();
         private double lag = 0, TIME_PER_FRAME = 0.001;
         private Keys lastKeyboardState;
         internal Game(GameWindowSettings gSettings, NativeWindowSettings nSettings) : base(gSettings, nSettings)
@@ -20,13 +22,19 @@ namespace Sholane
             GL.Enable(EnableCap.Texture2D);
 
             rocket = new Entity(33, 60, "Content\\Rocket.png", new Vector2(nSettings.Size.Y / 2 - 15, nSettings.Size.X - 60), BufferUsageHint.DynamicDraw);
-            plane = new Entity(60, 28, "Content\\Plane.png", Vector2.Zero, BufferUsageHint.DynamicDraw);
+            planes.Add(new Entity(60, 28, "Content\\Plane.png", Vector2.Zero, BufferUsageHint.DynamicDraw));
             background = new Entity(nSettings.Size.X, nSettings.Size.Y, "Content\\Sky.jpg", Vector2.Zero);
+            platforms.Add(new Entity(103, 10, "Content\\Platform.png", Vector2.Zero, BufferUsageHint.DynamicDraw));
         }
 
         protected override void OnLoad()
         {
             base.OnLoad();
+            Random random = new Random();
+            for (int x = 0; x < 5; x++)
+                planes.Add(new Entity(60, 28, "Content\\Plane.png", new Vector2(0, random.Next(0, this.Size.Y - 28)), BufferUsageHint.DynamicDraw));
+            for (int x = 0; x < 5; x++)
+                platforms.Add(new Entity(103, 10, "Content\\Platform.png", new Vector2(random.Next(0, this.Size.X - 103), random.Next(0, this.Size.Y - 10)), BufferUsageHint.DynamicDraw));
         }
         protected override void OnUnload()
         {
@@ -64,7 +72,7 @@ namespace Sholane
             GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
             background.Draw();
             rocket.Draw();
-            plane.Draw();
+            PlaceObjectsOnMap();
             GL.LoadIdentity();
             GL.End();
             SwapBuffers();
@@ -106,14 +114,26 @@ namespace Sholane
                     Close();
                     break;
             }
-            if (!OutsideBoarder(plane.Position.X + deltaMove + 60, plane.Position.Y))
-                plane.Move(new Vector2(deltaMove, 0.0f));
+            for (int i = 0; i < planes.Count;i++)
+                if (!OutsideBoarder(planes[i].Position.X + deltaMove + 60, planes[i].Position.Y + 28))
+                    planes[i].Move(new Vector2(deltaMove, deltaMove));
+
+            for (int i = 0; i < platforms.Count; i++)
+                if (!OutsideBoarder(platforms[i].Position.X + deltaMove, platforms[i].Position.Y + 10))
+                    platforms[i].Move(new Vector2(0.0f, deltaMove));
         }
         private bool OutsideBoarder(float x, float y)
         {
             if (x < 0 || y < 0 || x > this.Size.X || y > this.Size.Y)
                 return true;
             return false;
+        }
+        private void PlaceObjectsOnMap()
+        {
+            foreach (Entity plane in planes)
+                plane.Draw();
+            foreach (Entity platform in platforms)
+                platform.Draw();
         }
     }
 }
