@@ -9,6 +9,7 @@ namespace Sholane
 {
     internal class Game : GameWindow
     {
+        const float deltaMove = 0.1f;
         private Matrix4 ortho;
         private Entity rocket, plane, background;
         private double lag = 0, TIME_PER_FRAME = 0.001;
@@ -79,29 +80,40 @@ namespace Sholane
             {
                 case Keys.Up:
                 case Keys.W:
-                    rocket.Move(new Vector2(-0.0f, -0.1f));
+                    if (!OutsideBoarder(rocket.Position.X, rocket.Position.Y - deltaMove))
+                        rocket.Move(new Vector2(0.0f, -deltaMove));
                     break;
 
                 case Keys.Left:
                 case Keys.A:
-                    rocket.Move(new Vector2(-0.1f, 0.0f));
+                    if (!OutsideBoarder(rocket.Position.X - deltaMove, rocket.Position.Y))
+                        rocket.Move(new Vector2(-deltaMove, 0.0f));
                     break;
 
                 case Keys.Down:
                 case Keys.S:
-                    rocket.Move(new Vector2(0.0f, 0.1f));
+                    if (!OutsideBoarder(rocket.Position.X, rocket.Position.Y + deltaMove + 60))
+                        rocket.Move(new Vector2(0.0f, deltaMove));
                     break;
 
                 case Keys.Right:
                 case Keys.D:
-                    rocket.Move(new Vector2(0.1f, 0.0f));
+                    if (!OutsideBoarder(rocket.Position.X + deltaMove + 33, rocket.Position.Y))
+                        rocket.Move(new Vector2(deltaMove, 0.0f));
                     break;
 
                 case Keys.Escape:
                     Close();
                     break;
             }
-            plane.Move(new Vector2(0.01f, 0.0f));
+            if (!OutsideBoarder(plane.Position.X + deltaMove + 60, plane.Position.Y))
+                plane.Move(new Vector2(deltaMove, 0.0f));
+        }
+        private bool OutsideBoarder(float x, float y)
+        {
+            if (x < 0 || y < 0 || x > this.Size.X || y > this.Size.Y)
+                return true;
+            return false;
         }
     }
 }

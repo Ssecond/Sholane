@@ -11,6 +11,8 @@ namespace Sholane.TextureProcess
         private Vector2 position;
         private BufferUsageHint bufferUsageHint;
 
+        public Vector2 Position { get => position; }
+
         public Entity(int width, int height, string path, Vector2 position, BufferUsageHint bufferUsageHint = BufferUsageHint.StaticDraw)
         {
             texture = new Texture2D(path);
@@ -42,7 +44,6 @@ namespace Sholane.TextureProcess
                 position.X + 0.0f,  position.Y + height, // Bottom left
             };
 
-            vertexBufferID = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferID);
             GL.BufferData(BufferTarget.ArrayBuffer, vertexData.Length * sizeof(float), vertexData, bufferUsageHint);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
