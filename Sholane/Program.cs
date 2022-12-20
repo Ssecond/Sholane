@@ -7,13 +7,14 @@ namespace Sholane
     {
         static void Main(string[] args)
         {
+            
             GameWindowSettings gSettings = GameWindowSettings.Default;
             NativeWindowSettings nSettings = new NativeWindowSettings()
             {
                 Title = "Sholane",
                 Size = (500, 500),
                 Flags = ContextFlags.Default,
-                Profile = ContextProfile.Compatability
+                Profile = ContextProfile.Compatability,
             };
             Game game = new Game(gSettings, nSettings);
             game.Run();
