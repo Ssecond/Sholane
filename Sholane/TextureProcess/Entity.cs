@@ -11,15 +11,19 @@ namespace Sholane.TextureProcess
         private Vector2 position;
         private BufferUsageHint bufferUsageHint;
 
-        public Vector2 Position { get => position; }
+        internal Vector2 Position { get => position; }
+        internal int Width { get => width; }
+        internal int Height { get => height; }
+        internal float Speed { get; set; }
 
-        public Entity(int width, int height, string path, Vector2 position, BufferUsageHint bufferUsageHint = BufferUsageHint.StaticDraw)
+        internal Entity(int width, int height, string path, Vector2 position, BufferUsageHint bufferUsageHint = BufferUsageHint.StaticDraw, float speed = 0.0f)
         {
             texture = new Texture2D(path);
             this.position = position;
             this.width = width;
             this.height = height;
             this.bufferUsageHint = bufferUsageHint;
+            Speed = speed;
             vertexData = new float[]
             {
                 position.X + 0.0f,  position.Y + 0.0f, // Upper left

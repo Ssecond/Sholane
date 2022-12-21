@@ -12,7 +12,7 @@ namespace Sholane
             NativeWindowSettings nSettings = new NativeWindowSettings()
             {
                 Title = "Sholane",
-                Size = (500, 500),
+                Size = (700, 700),
                 Flags = ContextFlags.Default,
                 Profile = ContextProfile.Compatability,
             };

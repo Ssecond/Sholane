@@ -4,37 +4,56 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Sholane.TextureProcess;
+using System.Diagnostics;
+using System.Drawing;
 
 namespace Sholane
 {
     internal class Game : GameWindow
     {
-        const float deltaMove = 0.05f;
+        private const int offsetY = 50;
+        private const int offsetX = 35;
         private Matrix4 ortho;
         private Entity rocket, background;
         private List<Entity> planes = new List<Entity>();
         private List<Entity> platforms = new List<Entity>();
         private double lag = 0, TIME_PER_FRAME = 0.001;
-        private Keys lastKeyboardState;
+        private Keys lastKeyboardState = Keys.W;
+        private bool gameEndOrPaused = false;
+        
         internal Game(GameWindowSettings gSettings, NativeWindowSettings nSettings) : base(gSettings, nSettings)
         {
             VSync = VSyncMode.On;
             GL.Enable(EnableCap.Texture2D);
 
-            rocket = new Entity(33, 60, "Content\\Rocket.png", new Vector2(nSettings.Size.Y / 2 - 15, nSettings.Size.X - 60), BufferUsageHint.DynamicDraw);
-            planes.Add(new Entity(60, 28, "Content\\Plane.png", Vector2.Zero, BufferUsageHint.DynamicDraw));
+            rocket = new Entity(33, 60, "Content\\Rocket.png", new Vector2(nSettings.Size.X / 2 - 15, nSettings.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
             background = new Entity(nSettings.Size.X, nSettings.Size.Y, "Content\\Sky.jpg", Vector2.Zero);
-            platforms.Add(new Entity(103, 10, "Content\\Platform.png", Vector2.Zero, BufferUsageHint.DynamicDraw));
         }
 
         protected override void OnLoad()
         {
             base.OnLoad();
             Random random = new Random();
-            for (int x = 0; x < 5; x++)
-                planes.Add(new Entity(60, 28, "Content\\Plane.png", new Vector2(0, random.Next(0, this.Size.Y - 28)), BufferUsageHint.DynamicDraw));
-            for (int x = 0; x < 5; x++)
-                platforms.Add(new Entity(103, 10, "Content\\Platform.png", new Vector2(random.Next(0, this.Size.X - 103), random.Next(0, this.Size.Y - 10)), BufferUsageHint.DynamicDraw));
+            for (int i = 0; i < 4; i++)
+            {
+                int y = random.Next(0, this.Size.Y - 28 - 60);
+                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetY)
+                    y = random.Next(0, this.Size.Y - 28 - 60);
+                
+                planes.Add(new Entity(60, 28, "Content\\Plane.png", new Vector2(0, y), BufferUsageHint.DynamicDraw, 0.03f));
+            }
+            for (int i = 0; i < 5; i++)
+            {
+                int y = random.Next(0, this.Size.Y - 10 - 120);
+                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetY)
+                    y = random.Next(0, this.Size.Y - 10 - 120);
+
+                int x = random.Next(0, this.Size.X - 103);
+                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetX)
+                    x = random.Next(0, this.Size.X - 103);
+
+                platforms.Add(new Entity(103, 10, "Content\\Platform.png", new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.05f));
+            }
         }
         protected override void OnUnload()
         {
@@ -56,71 +75,101 @@ namespace Sholane
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
-            lag += args.Time;
-            if (lag > TIME_PER_FRAME)
+            if (lastKeyboardState == Keys.Escape)
+                Close();
+            else if (lastKeyboardState == Keys.P)
             {
-                while (lag > TIME_PER_FRAME)
+                gameEndOrPaused = !gameEndOrPaused;
+                lastKeyboardState = Keys.Unknown;
+            }
+
+            if (!gameEndOrPaused)
+            {
+                lag += args.Time;
+                if (lag > TIME_PER_FRAME)
                 {
-                    MoveEntities(lastKeyboardState);
-                    lag -= TIME_PER_FRAME;
+                    while (lag > TIME_PER_FRAME)
+                    {
+                        MoveEntities(lastKeyboardState);
+                        lag -= TIME_PER_FRAME;
+                    }
                 }
             }
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             base.OnRenderFrame(args);
-            GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
-            background.Draw();
-            rocket.Draw();
-            PlaceObjectsOnMap();
-            GL.LoadIdentity();
-            GL.End();
-            SwapBuffers();
+            if (!gameEndOrPaused)
+            {
+                GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
+                PlaceObjectsOnMap();
+                GL.LoadIdentity();
+                GL.End();
+                SwapBuffers();
+            }
         }
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
             base.OnKeyDown(e);
             lastKeyboardState = e.Key;
         }
+        private Rectangle getBounds(Entity entity)
+        {
+            return new Rectangle((int)entity.Position.X, (int)entity.Position.Y, entity.Width, entity.Height);
+        }
         private void MoveEntities(Keys key)
         {
+            for (int i = 0; i < planes.Count; i++)
+                if (getBounds(rocket).IntersectsWith(getBounds(planes[i])))
+                {
+                    planes.Remove(planes[i]);
+                    rocket.Move(-rocket.Position + new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
+                    break;
+                }
+            for (int i = 0; i < platforms.Count; i++)
+                if (getBounds(rocket).IntersectsWith(getBounds(platforms[i])))
+                {
+                    platforms.Remove(platforms[i]);
+                    gameEndOrPaused = true;
+                    break;
+                }
             switch (key)
             {
                 case Keys.Up:
                 case Keys.W:
-                    if (!OutsideBoarder(rocket.Position.X, rocket.Position.Y - deltaMove))
-                        rocket.Move(new Vector2(0.0f, -deltaMove));
+                    if (!OutsideBoarder(rocket.Position.X, rocket.Position.Y - rocket.Speed))
+                        rocket.Move(new Vector2(0.0f, -rocket.Speed));
                     break;
 
                 case Keys.Left:
                 case Keys.A:
-                    if (!OutsideBoarder(rocket.Position.X - deltaMove, rocket.Position.Y))
-                        rocket.Move(new Vector2(-deltaMove, 0.0f));
+                    if (!OutsideBoarder(rocket.Position.X - rocket.Speed, rocket.Position.Y))
+                        rocket.Move(new Vector2(-rocket.Speed, 0.0f));
                     break;
 
                 case Keys.Down:
                 case Keys.S:
-                    if (!OutsideBoarder(rocket.Position.X, rocket.Position.Y + deltaMove + 60))
-                        rocket.Move(new Vector2(0.0f, deltaMove));
+                    if (!OutsideBoarder(rocket.Position.X, rocket.Position.Y + rocket.Speed + rocket.Height))
+                        rocket.Move(new Vector2(0.0f, rocket.Speed));
                     break;
 
                 case Keys.Right:
                 case Keys.D:
-                    if (!OutsideBoarder(rocket.Position.X + deltaMove + 33, rocket.Position.Y))
-                        rocket.Move(new Vector2(deltaMove, 0.0f));
-                    break;
-
-                case Keys.Escape:
-                    Close();
+                    if (!OutsideBoarder(rocket.Position.X + rocket.Speed + rocket.Width, rocket.Position.Y))
+                        rocket.Move(new Vector2(rocket.Speed, 0.0f));
                     break;
             }
-            for (int i = 0; i < planes.Count;i++)
-                if (!OutsideBoarder(planes[i].Position.X + deltaMove + 60, planes[i].Position.Y + 28))
-                    planes[i].Move(new Vector2(deltaMove, deltaMove));
+            for (int i = 0; i < planes.Count; i++)
+                if (!OutsideBoarder(planes[i].Position.X + planes[i].Speed, planes[i].Position.Y))
+                    planes[i].Move(new Vector2(planes[i].Speed, planes[i].Speed));
+                else
+                    planes.Remove(planes[i]);
 
             for (int i = 0; i < platforms.Count; i++)
-                if (!OutsideBoarder(platforms[i].Position.X + deltaMove, platforms[i].Position.Y + 10))
-                    platforms[i].Move(new Vector2(0.0f, deltaMove));
+                if (!OutsideBoarder(platforms[i].Position.X + platforms[i].Speed, platforms[i].Position.Y))
+                    platforms[i].Move(new Vector2(0.0f, platforms[i].Speed));
+                else
+                    platforms.Remove(platforms[i]);
         }
         private bool OutsideBoarder(float x, float y)
         {
@@ -130,6 +179,8 @@ namespace Sholane
         }
         private void PlaceObjectsOnMap()
         {
+            background.Draw();
+            rocket.Draw();
             foreach (Entity plane in planes)
                 plane.Draw();
             foreach (Entity platform in platforms)
