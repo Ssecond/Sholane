@@ -14,13 +14,16 @@ namespace Sholane
         private const int offsetY = 50;
         private const int offsetX = 35;
         private Matrix4 ortho;
-        private Entity rocket, background, gameEndScreen, gamePauseScreen;
+        private Entity rocket, gameBackground, gamePauseScreen;
         private List<Entity> planes;
         private List<Entity> platforms;
         private double lag = 0, TIME_PER_FRAME = 0.001;
         private Keys lastKeyboardState = Keys.W;
         private bool gamePaused = false;
-        private bool gameEnd = false;
+        private bool gameNotStarted = true;
+
+        private Entity gameMainMenuScreen;
+        Button start, exit;
 
         private static int score;
         
@@ -29,13 +32,12 @@ namespace Sholane
             VSync = VSyncMode.On;
             GL.Enable(EnableCap.Texture2D);
         }
-        private void Initialize()
+        private void InitializeGame()
         {
             score = 0;
             this.Title = "Очки: " + score;
             rocket = new Entity(33, 60, new Texture2D("Content\\RocketSprite.png", true, 2, 1), new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
-            background = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\BackGroundSprite.png", true, 11, 2), Vector2.Zero);
-            gameEndScreen = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\GameOver.png"), Vector2.Zero);
+            gameBackground = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\BackGroundSprite.png", true, 11, 2), Vector2.Zero);
             gamePauseScreen = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\Pause.png"), Vector2.Zero);
             planes = new List<Entity>();
             platforms = new List<Entity>();
@@ -69,10 +71,20 @@ namespace Sholane
                 platforms.Add(new Entity(platformWidth, platformHeight, new Texture2D("Content\\Platform.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.05f));
             }
         }
+        private void InitializeMainMenu()
+        {
+            gameMainMenuScreen = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\MainMenuBackground.png"), Vector2.Zero);
+            int buttonsWidth = 200;
+            int buttonsHeight = 100;
+            start = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\StartButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 - 100));
+            start.OnMouseDown += StartGame;
+            exit = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\ExitButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
+            exit.OnMouseDown += ExitGame;
+        }
         protected override void OnLoad()
         {
             base.OnLoad();
-            Initialize();
+            InitializeMainMenu();
         }
         protected override void OnUnload()
         {
@@ -89,9 +101,12 @@ namespace Sholane
             GL.LoadMatrix(ref ortho);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
-            background.Resize(this.Size.X, this.Size.Y);
-            gameEndScreen.Resize(this.Size.X, this.Size.Y);
-            gamePauseScreen.Resize(this.Size.X, this.Size.Y);
+            
+            if (gameBackground != null)
+                gameBackground.Resize(this.Size.X, this.Size.Y);
+            gameMainMenuScreen.Resize(this.Size.X, this.Size.Y);
+            if (gamePauseScreen != null)
+                gamePauseScreen.Resize(this.Size.X, this.Size.Y);
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
@@ -104,7 +119,7 @@ namespace Sholane
                 lastKeyboardState = Keys.Unknown;
             }
 
-            if (!gamePaused && !gameEnd)
+            if (!gamePaused && !gameNotStarted)
             {
                 lag += args.Time;
                 if (lag > TIME_PER_FRAME)
@@ -112,7 +127,7 @@ namespace Sholane
                     while (lag > TIME_PER_FRAME)
                     {
                         MoveEntities(lastKeyboardState);
-                        background.Update(lag);
+                        gameBackground.Update(lag);
                         rocket.Update(lag);
                         lag -= TIME_PER_FRAME;
                     }
@@ -120,15 +135,15 @@ namespace Sholane
             }
             else if (lastKeyboardState == Keys.R)
             {
-                gameEnd = !gameEnd;
-                Initialize();
+                gameNotStarted = !gameNotStarted;
+                InitializeGame();
                 lastKeyboardState = Keys.Unknown;
             }
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             base.OnRenderFrame(args);
-            if (!gameEnd)
+            if (!gameNotStarted)
                 if (!gamePaused)
                 {
                     GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
@@ -141,7 +156,11 @@ namespace Sholane
                     gamePauseScreen.Draw();
                 }
             else
-                gameEndScreen.Draw();
+            {
+                gameMainMenuScreen.Draw();
+                start.Draw();
+                exit.Draw();
+            }
             SwapBuffers();
         }
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
@@ -168,7 +187,7 @@ namespace Sholane
             for (int i = 0; i < platforms.Count; i++)
                 if (getBounds(rocket).IntersectsWith(getBounds(platforms[i])))
                 {
-                    gameEnd = true;
+                    gameNotStarted = true;
                     break;
                 }
             switch (key)
@@ -227,12 +246,35 @@ namespace Sholane
         }
         private void PlaceObjectsOnMap()
         {
-            background.Draw(0.015f); // 0.015f
+            gameBackground.Draw(0.015f); // 0.015f
             rocket.Draw(0.035f);
             foreach (Entity plane in planes)
                 plane.Draw();
             foreach (Entity platform in platforms)
                 platform.Draw();
+        }
+        private void StartGame()
+        {
+            gameNotStarted = false;
+            InitializeGame();
+        }
+        private void ExitGame()
+        {
+            this.Close();
+        }
+        private Vector2 cursorPosition;
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseDown(e);
+            if (start.IsPointInFigure(cursorPosition))
+                start.OnMouseDown.Invoke();
+            if (exit.IsPointInFigure(cursorPosition))
+                exit.OnMouseDown.Invoke();
+        }
+        protected override void OnMouseMove(MouseMoveEventArgs e)
+        {
+            base.OnMouseMove(e);
+            cursorPosition = new Vector2(e.Position.X, e.Position.Y);
         }
     }
 }
