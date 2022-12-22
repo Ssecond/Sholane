@@ -13,13 +13,14 @@ namespace Sholane
     {
         private const int offsetY = 50;
         private const int offsetX = 35;
+        private int buttonsWidth = 200;
+        private int buttonsHeight = 100;
         private Matrix4 ortho;
-        private Entity rocket, gameBackground, gamePauseScreen;
+        private Entity rocket, gameBackground;
         private List<Entity> planes;
         private List<Entity> platforms;
         private double lag = 0, TIME_PER_FRAME = 0.001;
         private Keys lastKeyboardState = Keys.W;
-        private bool gamePaused = false;
         private bool gameNotStarted = true;
 
         private Entity gameMainMenuScreen;
@@ -38,7 +39,6 @@ namespace Sholane
             this.Title = "Очки: " + score;
             rocket = new Entity(33, 60, new Texture2D("Content\\RocketSprite.png", true, 2, 1), new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
             gameBackground = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\BackGroundSprite.png", true, 11, 2), Vector2.Zero);
-            gamePauseScreen = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\Pause.png"), Vector2.Zero);
             planes = new List<Entity>();
             platforms = new List<Entity>();
             Random random = new Random();
@@ -74,8 +74,6 @@ namespace Sholane
         private void InitializeMainMenu()
         {
             gameMainMenuScreen = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\MainMenuBackground.png"), Vector2.Zero);
-            int buttonsWidth = 200;
-            int buttonsHeight = 100;
             start = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\StartButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 - 100));
             start.OnMouseDown += StartGame;
             exit = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\ExitButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
@@ -105,21 +103,21 @@ namespace Sholane
             if (gameBackground != null)
                 gameBackground.Resize(this.Size.X, this.Size.Y);
             gameMainMenuScreen.Resize(this.Size.X, this.Size.Y);
-            if (gamePauseScreen != null)
-                gamePauseScreen.Resize(this.Size.X, this.Size.Y);
+            start = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\StartButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 - 100));
+            start.OnMouseDown += StartGame;
+            exit = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\ExitButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
+            exit.OnMouseDown += ExitGame;
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
             if (lastKeyboardState == Keys.Escape)
-                Close();
-            else if (lastKeyboardState == Keys.P)
             {
-                gamePaused = !gamePaused;
+                gameNotStarted = !gameNotStarted;
                 lastKeyboardState = Keys.Unknown;
             }
 
-            if (!gamePaused && !gameNotStarted)
+            if (!gameNotStarted)
             {
                 lag += args.Time;
                 if (lag > TIME_PER_FRAME)
@@ -133,7 +131,7 @@ namespace Sholane
                     }
                 }
             }
-            else if (lastKeyboardState == Keys.R)
+            else if (lastKeyboardState == Keys.Enter)
             {
                 gameNotStarted = !gameNotStarted;
                 InitializeGame();
@@ -144,16 +142,11 @@ namespace Sholane
         {
             base.OnRenderFrame(args);
             if (!gameNotStarted)
-                if (!gamePaused)
                 {
                     GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
                     PlaceObjectsOnMap();
                     GL.LoadIdentity();
                     GL.End();
-                }
-                else
-                {
-                    gamePauseScreen.Draw();
                 }
             else
             {
@@ -268,7 +261,7 @@ namespace Sholane
             base.OnMouseDown(e);
             if (start.IsPointInFigure(cursorPosition))
                 start.OnMouseDown.Invoke();
-            if (exit.IsPointInFigure(cursorPosition))
+            else if (exit.IsPointInFigure(cursorPosition))
                 exit.OnMouseDown.Invoke();
         }
         protected override void OnMouseMove(MouseMoveEventArgs e)

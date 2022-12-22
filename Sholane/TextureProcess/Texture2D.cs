@@ -66,7 +66,7 @@ namespace Sholane.TextureProcess
         }
         private void UpdateCoordinates(int currentFrame)
         {
-            int rowNumber = currentFrame / columns; // Можно убрать, чисто теоритически, функцию Truncate
+            int rowNumber = currentFrame / columns;
             int columnNumber = currentFrame - rowNumber * columns;
             float stepWidth = 1.0f / columns;
             float stepHeight = 1.0f / rows;
