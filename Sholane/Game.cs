@@ -3,8 +3,8 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Sholane.GameObjects;
 using Sholane.TextureProcess;
-using System.Diagnostics;
 using System.Drawing;
 
 namespace Sholane
@@ -33,32 +33,40 @@ namespace Sholane
         {
             score = 0;
             this.Title = "Очки: " + score;
-            rocket = new Entity(33, 60, "Content\\Rocket.png", new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
-            background = new Entity(this.Size.X, this.Size.Y, "Content\\Sky.jpg", Vector2.Zero);
-            gameEndScreen = new Entity(this.Size.X, this.Size.Y, "Content\\GameOver.png", Vector2.Zero);
-            gamePauseScreen = new Entity(this.Size.X, this.Size.Y, "Content\\Pause.png", Vector2.Zero);
+            rocket = new Entity(33, 60, new Texture2D("Content\\RocketSprite.png", true, 2, 1), new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
+            background = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\BackGroundSprite.png", true, 11, 2), Vector2.Zero);
+            gameEndScreen = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\GameOver.png"), Vector2.Zero);
+            gamePauseScreen = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\Pause.png"), Vector2.Zero);
             planes = new List<Entity>();
             platforms = new List<Entity>();
             Random random = new Random();
-            for (int i = 0; i < 4; i++)
-            {
-                int y = random.Next(0, this.Size.Y - 28 - 60);
-                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetY)
-                    y = random.Next(0, this.Size.Y - 28 - 60);
-
-                planes.Add(new Entity(60, 28, "Content\\Plane.png", new Vector2(0, y), BufferUsageHint.DynamicDraw, 0.03f));
-            }
+            int planeHeight = 28;
+            int planeWidth = 60;
             for (int i = 0; i < 5; i++)
             {
-                int y = random.Next(0, this.Size.Y - 10 - 120);
+                int y = random.Next(0, this.Size.Y - planeHeight - rocket.Height*2);
                 while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetY)
-                    y = random.Next(0, this.Size.Y - 10 - 120);
+                    y = random.Next(0, this.Size.Y - planeHeight - rocket.Height*2);
 
-                int x = random.Next(0, this.Size.X - 103);
+                int x = random.Next(0, this.Size.X - planeWidth);
                 while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetX)
-                    x = random.Next(0, this.Size.X - 103);
+                    x = random.Next(0, this.Size.X - planeWidth);
 
-                platforms.Add(new Entity(103, 10, "Content\\Platform.png", new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.05f));
+                planes.Add(new Entity(planeWidth, planeHeight, new Texture2D("Content\\Plane.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.03f));
+            }
+            int platformHeight = 10;
+            int platformWidth = 103;
+            for (int i = 0; i < 5; i++)
+            {
+                int y = random.Next(0, this.Size.Y - platformHeight - rocket.Height*2);
+                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetY)
+                    y = random.Next(0, this.Size.Y - platformHeight - rocket.Height*2);
+
+                int x = random.Next(0, this.Size.X - platformWidth);
+                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetX)
+                    x = random.Next(0, this.Size.X - platformWidth);
+
+                platforms.Add(new Entity(platformWidth, platformHeight, new Texture2D("Content\\Platform.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.05f));
             }
         }
         protected override void OnLoad()
@@ -82,6 +90,8 @@ namespace Sholane
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
             background.Resize(this.Size.X, this.Size.Y);
+            gameEndScreen.Resize(this.Size.X, this.Size.Y);
+            gamePauseScreen.Resize(this.Size.X, this.Size.Y);
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
@@ -102,6 +112,8 @@ namespace Sholane
                     while (lag > TIME_PER_FRAME)
                     {
                         MoveEntities(lastKeyboardState);
+                        background.Update(lag);
+                        rocket.Update(lag);
                         lag -= TIME_PER_FRAME;
                     }
                 }
@@ -147,7 +159,8 @@ namespace Sholane
                 if (getBounds(rocket).IntersectsWith(getBounds(planes[i])))
                 {
                     planes.Remove(planes[i]);
-                    planes.Add(new Entity(60, 28, "Content\\Plane.png", new Vector2(0, new Random().Next(0, this.Size.Y - 28 - 60)), BufferUsageHint.DynamicDraw, 0.03f));
+                    Random random = new Random();
+                    planes.Add(new Entity(60, 28, new Texture2D("Content\\Plane.png"), new Vector2(0, random.Next(0, this.Size.Y - 28 - 60)), BufferUsageHint.DynamicDraw, 0.03f));
                     rocket.Move(-rocket.Position + new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
                     this.Title = "Очки: " + ++score;
                     break;
@@ -156,7 +169,6 @@ namespace Sholane
                 if (getBounds(rocket).IntersectsWith(getBounds(platforms[i])))
                 {
                     gameEnd = true;
-                    platforms.Remove(platforms[i]);
                     break;
                 }
             switch (key)
@@ -202,7 +214,9 @@ namespace Sholane
                 else
                 {
                     Random random = new Random();
-                    platforms[i].Move(new Vector2(random.Next(-1, 1), -this.Size.Y));
+                    int x = random.Next(0, this.Size.X - 103);
+                    platforms.Remove(platforms[i]);
+                    platforms.Add(new Entity(103, 10, new Texture2D("Content\\Platform.png"), new Vector2(x, 0.0f), BufferUsageHint.DynamicDraw, 0.05f));
                 }
         }
         private bool OutsideBoarder(float x, float y)
@@ -213,8 +227,8 @@ namespace Sholane
         }
         private void PlaceObjectsOnMap()
         {
-            background.Draw();
-            rocket.Draw();
+            background.Draw(0.015f); // 0.015f
+            rocket.Draw(0.035f);
             foreach (Entity plane in planes)
                 plane.Draw();
             foreach (Entity platform in platforms)

@@ -6,12 +6,24 @@ namespace Sholane.TextureProcess
 {
     internal class Texture2D : IDisposable
     {
-        private int id, width, height, bufferID;
+        private int id, bufferID;
+        private int width, height;
         private float[] coordinates;
-        internal Texture2D (string path)
+
+        private int columns, rows;
+        private double frameTimer;
+        private double time;
+        private int framesCount = 1;
+        private int currentFrame;
+        internal Texture2D (string path, bool mipmap = true, int columns = 1, int rows = 1)
         {
             if (!File.Exists(path))
                 throw new FileNotFoundException($"Файл не был найден.\nВведённый путь: \"{path}\"");
+
+            this.columns = columns; 
+            this.rows = rows;
+            this.currentFrame = columns;
+            this.framesCount = columns * rows;
 
             Bitmap bmp = new Bitmap(path);
             width = bmp.Width;
@@ -28,15 +40,18 @@ namespace Sholane.TextureProcess
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0,
                 OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+            if (mipmap)
+                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             GL.BindTexture(TextureTarget.Texture2D, 0);
 
             bmp.UnlockBits(data);
 
             coordinates = new float[]
             {
-                0.0f, 0.0f, // Bottom left
-                1.0f, 0.0f, // Bottom right
-                1.0f, 1.0f, // Upper right
+                // First two actually upper, last - bottom, coz I needed to rotate the image.
+                0.0f, 1 - 1.0f / rows, // Bottom left
+                1.0f / columns, 1 - 1.0f / rows, // Bottom right
+                1.0f / columns, 1.0f, // Upper right
                 0.0f, 1.0f, // Upper left
             };
             bufferID = GL.GenBuffer();
@@ -45,8 +60,41 @@ namespace Sholane.TextureProcess
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
 
-        internal void Bind()
+        internal void Update(double time)
+        { 
+            this.time = time;
+        }
+        private void UpdateCoordinates(int currentFrame)
         {
+            int rowNumber = currentFrame / columns; // Можно убрать, чисто теоритически, функцию Truncate
+            int columnNumber = currentFrame - rowNumber * columns;
+            float stepWidth = 1.0f / columns;
+            float stepHeight = 1.0f / rows;
+            coordinates = new float[]
+            {
+                stepWidth * columnNumber, 1.0f - (rowNumber + 1) * stepHeight, // Bottom left
+                stepWidth * columnNumber + stepWidth, 1.0f - (rowNumber + 1) * stepHeight, // Bottom right
+                stepWidth * columnNumber + stepWidth, 1.0f - rowNumber * stepHeight,  // Upper right
+                stepWidth * columnNumber, 1.0f - rowNumber * stepHeight, // Upper left
+            };
+            GL.BindBuffer(BufferTarget.ArrayBuffer, bufferID);
+            GL.BufferData(BufferTarget.ArrayBuffer, coordinates.Length * sizeof(float), coordinates, BufferUsageHint.DynamicDraw);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+        }
+        internal void Bind(double timePerFrame)
+        {
+            if (timePerFrame > 0 && framesCount > 1)
+            {
+                UpdateCoordinates(currentFrame);
+                frameTimer += time;
+                if (frameTimer > timePerFrame)
+                {
+                    currentFrame++;
+                    if (currentFrame > framesCount - 1)
+                        currentFrame = 0;
+                    frameTimer = 0;
+                }
+            }
             GL.BindTexture(TextureTarget.Texture2D, id);
             GL.BindBuffer(BufferTarget.ArrayBuffer, bufferID);
             GL.TexCoordPointer(2, TexCoordPointerType.Float, 0, 0);
