@@ -37,8 +37,8 @@ namespace Sholane
         {
             score = 0;
             this.Title = "Очки: " + score;
-            rocket = new Entity(33, 60, new Texture2D("Content\\RocketSprite.png", true, 2, 1), new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
-            gameBackground = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\BackGroundSprite.png", true, 11, 2), Vector2.Zero);
+            rocket = new Entity(33, 60, new Texture("Content\\RocketSprite.png", 2, 1), new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
+            gameBackground = new Entity(this.Size.X, this.Size.Y, new Texture("Content\\BackGroundSprite.png", 11, 2), Vector2.Zero);
             planes = new List<Entity>();
             platforms = new List<Entity>();
             Random random = new Random();
@@ -54,7 +54,7 @@ namespace Sholane
                 while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetX)
                     x = random.Next(0, this.Size.X - planeWidth);
 
-                planes.Add(new Entity(planeWidth, planeHeight, new Texture2D("Content\\Plane.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.03f));
+                planes.Add(new Entity(planeWidth, planeHeight, new Texture("Content\\Plane.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.03f));
             }
             int platformHeight = 10;
             int platformWidth = 103;
@@ -68,15 +68,15 @@ namespace Sholane
                 while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetX)
                     x = random.Next(0, this.Size.X - platformWidth);
 
-                platforms.Add(new Entity(platformWidth, platformHeight, new Texture2D("Content\\Platform.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.05f));
+                platforms.Add(new Entity(platformWidth, platformHeight, new Texture("Content\\Platform.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.05f));
             }
         }
         private void InitializeMainMenu()
         {
-            gameMainMenuScreen = new Entity(this.Size.X, this.Size.Y, new Texture2D("Content\\MainMenuBackground.png"), Vector2.Zero);
-            start = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\StartButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 - 100));
+            gameMainMenuScreen = new Entity(this.Size.X, this.Size.Y, new Texture("Content\\MainMenuBackground.png"), Vector2.Zero);
+            start = new Button(buttonsWidth, buttonsHeight, new Texture("Content\\StartButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 - 100));
             start.OnMouseDown += StartGame;
-            exit = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\ExitButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
+            exit = new Button(buttonsWidth, buttonsHeight, new Texture("Content\\ExitButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
             exit.OnMouseDown += ExitGame;
         }
         protected override void OnLoad()
@@ -103,15 +103,15 @@ namespace Sholane
             if (gameBackground != null)
                 gameBackground.Resize(this.Size.X, this.Size.Y);
             gameMainMenuScreen.Resize(this.Size.X, this.Size.Y);
-            start = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\StartButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 - 100));
+            start = new Button(buttonsWidth, buttonsHeight, new Texture("Content\\StartButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 - 100));
             start.OnMouseDown += StartGame;
-            exit = new Button(buttonsWidth, buttonsHeight, new Texture2D("Content\\ExitButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
+            exit = new Button(buttonsWidth, buttonsHeight, new Texture("Content\\ExitButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
             exit.OnMouseDown += ExitGame;
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
-            if (lastKeyboardState == Keys.Escape)
+            if (gameBackground != null && lastKeyboardState == Keys.Escape)
             {
                 gameNotStarted = !gameNotStarted;
                 lastKeyboardState = Keys.Unknown;
@@ -172,7 +172,7 @@ namespace Sholane
                 {
                     planes.Remove(planes[i]);
                     Random random = new Random();
-                    planes.Add(new Entity(60, 28, new Texture2D("Content\\Plane.png"), new Vector2(0, random.Next(0, this.Size.Y - 28 - 60)), BufferUsageHint.DynamicDraw, 0.03f));
+                    planes.Add(new Entity(60, 28, new Texture("Content\\Plane.png"), new Vector2(0, random.Next(0, this.Size.Y - 28 - 60)), BufferUsageHint.DynamicDraw, 0.03f));
                     rocket.Move(-rocket.Position + new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
                     this.Title = "Очки: " + ++score;
                     break;
@@ -228,7 +228,7 @@ namespace Sholane
                     Random random = new Random();
                     int x = random.Next(0, this.Size.X - 103);
                     platforms.Remove(platforms[i]);
-                    platforms.Add(new Entity(103, 10, new Texture2D("Content\\Platform.png"), new Vector2(x, 0.0f), BufferUsageHint.DynamicDraw, 0.05f));
+                    platforms.Add(new Entity(103, 10, new Texture("Content\\Platform.png"), new Vector2(x, 0.0f), BufferUsageHint.DynamicDraw, 0.05f));
                 }
         }
         private bool OutsideBoarder(float x, float y)

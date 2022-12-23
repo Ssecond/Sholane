@@ -4,7 +4,7 @@ using OpenTK.Graphics.OpenGL;
 
 namespace Sholane.TextureProcess
 {
-    internal class Texture2D : IDisposable
+    internal class Texture : IDisposable
     {
         private int id, bufferID;
         private int width, height;
@@ -15,7 +15,7 @@ namespace Sholane.TextureProcess
         private double time;
         private int framesCount = 1;
         private int currentFrame;
-        internal Texture2D (string path, bool mipmap = true, int columns = 1, int rows = 1)
+        internal Texture (string path, int columns = 1, int rows = 1)
         {
             if (!File.Exists(path))
                 throw new FileNotFoundException($"Файл не был найден.\nВведённый путь: \"{path}\"");
@@ -40,8 +40,7 @@ namespace Sholane.TextureProcess
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, data.Width, data.Height, 0,
                 OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
-            if (mipmap)
-                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
             GL.BindTexture(TextureTarget.Texture2D, 0);
 
             bmp.UnlockBits(data);

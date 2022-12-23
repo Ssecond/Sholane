@@ -8,7 +8,7 @@ namespace Sholane.GameObjects
     {
         private int vertexBufferID, width, height;
         private float[] vertexData;
-        private Texture2D texture;
+        private Texture texture;
         private Vector2 position;
         private BufferUsageHint bufferUsageHint;
 
@@ -17,7 +17,7 @@ namespace Sholane.GameObjects
         internal int Height { get => height; }
         internal float Speed { get; set; }
 
-        internal Entity(int width, int height, Texture2D texture, Vector2 position, BufferUsageHint bufferUsageHint = BufferUsageHint.StaticDraw, float speed = 0.0f)
+        internal Entity(int width, int height, Texture texture, Vector2 position, BufferUsageHint bufferUsageHint = BufferUsageHint.StaticDraw, float speed = 0.0f)
         {
             this.texture = texture;
             this.position = position;

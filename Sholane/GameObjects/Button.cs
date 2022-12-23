@@ -12,7 +12,7 @@ namespace Sholane.GameObjects
         private Vector2 position;
 
         internal MouseDelegate OnMouseDown;
-        internal Button(int width, int height, Texture2D texture, Vector2 position, BufferUsageHint bufferUsageHint = BufferUsageHint.StaticDraw, float speed = 0) : base(width, height, texture, position, bufferUsageHint, speed)
+        internal Button(int width, int height, Texture texture, Vector2 position, BufferUsageHint bufferUsageHint = BufferUsageHint.StaticDraw, float speed = 0) : base(width, height, texture, position, bufferUsageHint, speed)
         {
             this.width = width;
             this.height = height;
