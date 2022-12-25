@@ -19,7 +19,7 @@ namespace Sholane
         private Entity rocket, gameBackground;
         private List<Entity> planes;
         private List<Entity> platforms;
-        private double lag = 0, TIME_PER_FRAME = 0.001;
+        private double lag = 0, timePerFrame = 0.001;
         private Keys lastKeyboardState = Keys.W;
         private bool gameNotStarted = true;
 
@@ -120,14 +120,14 @@ namespace Sholane
             if (!gameNotStarted)
             {
                 lag += args.Time;
-                if (lag > TIME_PER_FRAME)
+                if (lag > timePerFrame)
                 {
-                    while (lag > TIME_PER_FRAME)
+                    while (lag > timePerFrame)
                     {
                         MoveEntities(lastKeyboardState);
                         gameBackground.Update(lag);
                         rocket.Update(lag);
-                        lag -= TIME_PER_FRAME;
+                        lag -= timePerFrame;
                     }
                 }
             }
@@ -143,7 +143,7 @@ namespace Sholane
             base.OnRenderFrame(args);
             if (!gameNotStarted)
                 {
-                    GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
+                    GL.Clear(ClearBufferMask.ColorBufferBit);
                     PlaceObjectsOnMap();
                     GL.LoadIdentity();
                     GL.End();
