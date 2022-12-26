@@ -145,8 +145,6 @@ namespace Sholane
                 {
                     GL.Clear(ClearBufferMask.ColorBufferBit);
                     PlaceObjectsOnMap();
-                    GL.LoadIdentity();
-                    GL.End();
                 }
             else
             {
@@ -259,10 +257,11 @@ namespace Sholane
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
-            if (start.IsPointInFigure(cursorPosition))
-                start.OnMouseDown.Invoke();
-            else if (exit.IsPointInFigure(cursorPosition))
-                exit.OnMouseDown.Invoke();
+            if (gameNotStarted)
+                if (start.IsPointInFigure(cursorPosition))
+                    start.OnMouseDown.Invoke();
+                else if (exit.IsPointInFigure(cursorPosition))
+                    exit.OnMouseDown.Invoke();
         }
         protected override void OnMouseMove(MouseMoveEventArgs e)
         {
