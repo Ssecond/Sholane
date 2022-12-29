@@ -11,7 +11,7 @@ namespace Sholane
 {
     internal class Game : GameWindow
     {
-        private const int offsetY = 50;
+        private const int offsetY = 70;
         private const int offsetX = 35;
         private int buttonsWidth = 200;
         private int buttonsHeight = 100;
@@ -35,41 +35,58 @@ namespace Sholane
         }
         private void InitializeGame()
         {
+            if (gameBackground != null)
+            {
+                gameBackground.Dispose();
+                rocket.Dispose();
+                foreach (Entity plane in planes)
+                    plane.Dispose();
+                foreach (Entity platform in platforms)
+                    platform.Dispose();
+            }
+
             score = 0;
             this.Title = "Очки: " + score;
             rocket = new Entity(33, 60, new Texture("Content\\RocketSprite.png", 2, 1), new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
             gameBackground = new Entity(this.Size.X, this.Size.Y, new Texture("Content\\BackGroundSprite.png", 11, 2), Vector2.Zero);
-            planes = new List<Entity>();
-            platforms = new List<Entity>();
             Random random = new Random();
+
+            planes = new List<Entity>();
             int planeHeight = 28;
             int planeWidth = 60;
-            for (int i = 0; i < 5; i++)
+            while (planes.Count != 5)
             {
-                int y = random.Next(0, this.Size.Y - planeHeight - rocket.Height*2);
-                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetY)
-                    y = random.Next(0, this.Size.Y - planeHeight - rocket.Height*2);
-
-                int x = random.Next(0, this.Size.X - planeWidth);
-                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetX)
+                int x, y;
+                do
+                {
+                    y = random.Next(0, this.Size.Y - planeHeight - rocket.Height * 2);
                     x = random.Next(0, this.Size.X - planeWidth);
-
+                }
+                while (!allEntitiesFarAway(planes, x, y));
                 planes.Add(new Entity(planeWidth, planeHeight, new Texture("Content\\Plane.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.03f));
             }
+
+            platforms = new List<Entity>();
             int platformHeight = 10;
             int platformWidth = 103;
-            for (int i = 0; i < 5; i++)
+            while (platforms.Count != 6)
             {
-                int y = random.Next(0, this.Size.Y - platformHeight - rocket.Height*2);
-                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetY)
-                    y = random.Next(0, this.Size.Y - platformHeight - rocket.Height*2);
-
-                int x = random.Next(0, this.Size.X - platformWidth);
-                while (i != 0 && Math.Abs(planes[i - 1].Position.Y - y) < offsetX)
+                int x, y;
+                do
+                {
+                    y = random.Next(0, this.Size.Y - platformHeight - rocket.Height * 2);
                     x = random.Next(0, this.Size.X - platformWidth);
-
+                }
+                while (!allEntitiesFarAway(platforms, x, y));
                 platforms.Add(new Entity(platformWidth, platformHeight, new Texture("Content\\Platform.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.05f));
             }
+        }
+        private bool allEntitiesFarAway(List<Entity> entities, int x, int y)
+        {
+            foreach (Entity entity in entities)
+                if (Math.Abs(entity.Position.X - x) < offsetX || Math.Abs(entity.Position.Y - y) < offsetY)
+                    return false;
+            return true;
         }
         private void InitializeMainMenu()
         {
@@ -103,10 +120,11 @@ namespace Sholane
             if (gameBackground != null)
                 gameBackground.Resize(this.Size.X, this.Size.Y);
             gameMainMenuScreen.Resize(this.Size.X, this.Size.Y);
-            start = new Button(buttonsWidth, buttonsHeight, new Texture("Content\\StartButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 - 100));
-            start.OnMouseDown += StartGame;
-            exit = new Button(buttonsWidth, buttonsHeight, new Texture("Content\\ExitButton.png"), new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
-            exit.OnMouseDown += ExitGame;
+
+            start.Move(-start.Position);
+            start.Move(new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 - 100));
+            exit.Move(-exit.Position);
+            exit.Move(new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
@@ -142,10 +160,10 @@ namespace Sholane
         {
             base.OnRenderFrame(args);
             if (!gameNotStarted)
-                {
-                    GL.Clear(ClearBufferMask.ColorBufferBit);
-                    PlaceObjectsOnMap();
-                }
+            {
+                GL.Clear(ClearBufferMask.ColorBufferBit);
+                PlaceObjectsOnMap();
+            }
             else
             {
                 gameMainMenuScreen.Draw();
@@ -168,9 +186,16 @@ namespace Sholane
             for (int i = 0; i < planes.Count; i++)
                 if (getBounds(rocket).IntersectsWith(getBounds(planes[i])))
                 {
-                    planes.Remove(planes[i]);
                     Random random = new Random();
-                    planes.Add(new Entity(60, 28, new Texture("Content\\Plane.png"), new Vector2(0, random.Next(0, this.Size.Y - 28 - 60)), BufferUsageHint.DynamicDraw, 0.03f));
+                    int x, y;
+                    do
+                    {
+                        y = random.Next(0, this.Size.Y - planes[i].Height - rocket.Height * 2);
+                        x = random.Next(0, this.Size.X - planes[i].Width);
+                    }
+                    while (!allEntitiesFarAway(planes, x, y));
+                    planes[i].Move(-planes[i].Position);
+                    planes[i].Move(new Vector2(x, y));
                     rocket.Move(-rocket.Position + new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
                     this.Title = "Очки: " + ++score;
                     break;
@@ -225,8 +250,8 @@ namespace Sholane
                 {
                     Random random = new Random();
                     int x = random.Next(0, this.Size.X - 103);
-                    platforms.Remove(platforms[i]);
-                    platforms.Add(new Entity(103, 10, new Texture("Content\\Platform.png"), new Vector2(x, 0.0f), BufferUsageHint.DynamicDraw, 0.05f));
+                    platforms[i].Move(-platforms[i].Position);
+                    platforms[i].Move(new Vector2(x, 0));
                 }
         }
         private bool OutsideBoarder(float x, float y)
@@ -237,7 +262,7 @@ namespace Sholane
         }
         private void PlaceObjectsOnMap()
         {
-            gameBackground.Draw(0.015f); // 0.015f
+            gameBackground.Draw(0.015f);
             rocket.Draw(0.035f);
             foreach (Entity plane in planes)
                 plane.Draw();

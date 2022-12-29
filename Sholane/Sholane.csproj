@@ -29,6 +29,9 @@
     <None Update="Content\MainMenuBackground.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Content\Meteor.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Content\OldSprite.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
