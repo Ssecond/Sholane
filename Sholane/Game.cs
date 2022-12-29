@@ -19,8 +19,9 @@ namespace Sholane
         private Entity rocket, gameBackground;
         private List<Entity> planes;
         private List<Entity> platforms;
+        private List<Entity> meteors;
         private double lag = 0, timePerFrame = 0.001;
-        private Keys lastKeyboardState = Keys.W;
+        private Keys lastKeyboardState;
         private bool gameNotStarted = true;
 
         private Entity gameMainMenuScreen;
@@ -79,6 +80,21 @@ namespace Sholane
                 }
                 while (!allEntitiesFarAway(platforms, x, y));
                 platforms.Add(new Entity(platformWidth, platformHeight, new Texture("Content\\Platform.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.05f));
+            }
+
+            meteors = new List<Entity>();
+            int meteorHeight = 52;
+            int meteormWidth = 13;
+            while (meteors.Count != 2)
+            {
+                int x, y;
+                do
+                {
+                    y = random.Next(0, this.Size.Y - meteorHeight - rocket.Height * 2);
+                    x = random.Next(0, this.Size.X - meteormWidth);
+                }
+                while (!allEntitiesFarAway(meteors, x, y));
+                meteors.Add(new Entity(meteormWidth, meteorHeight, new Texture("Content\\Meteor.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.2f));
             }
         }
         private bool allEntitiesFarAway(List<Entity> entities, int x, int y)
@@ -249,10 +265,32 @@ namespace Sholane
                 else
                 {
                     Random random = new Random();
-                    int x = random.Next(0, this.Size.X - 103);
+                    int x;
+                    do
+                    {
+                        x = random.Next(0, this.Size.X - platforms[i].Height);
+                    }
+                    while (!allEntitiesFarAway(platforms, x, 0));
                     platforms[i].Move(-platforms[i].Position);
                     platforms[i].Move(new Vector2(x, 0));
                 }
+
+            for (int i = 0; i < meteors.Count; i++)
+                if (!OutsideBoarder(meteors[i].Position.X + meteors[i].Speed, meteors[i].Position.Y))
+                    meteors[i].Move(new Vector2(0.0f, meteors[i].Speed));
+                else
+                {
+                    Random random = new Random();
+                    int x;
+                    do
+                    {
+                        x = random.Next(0, this.Size.X - meteors[i].Height);
+                    }
+                    while (!allEntitiesFarAway(meteors, x, 0));
+                    meteors[i].Move(-meteors[i].Position);
+                    meteors[i].Move(new Vector2(x, 0));
+                }
+
         }
         private bool OutsideBoarder(float x, float y)
         {
@@ -263,11 +301,13 @@ namespace Sholane
         private void PlaceObjectsOnMap()
         {
             gameBackground.Draw(0.015f);
-            rocket.Draw(0.035f);
+            rocket.Draw(0.0045f);
             foreach (Entity plane in planes)
                 plane.Draw();
             foreach (Entity platform in platforms)
                 platform.Draw();
+            foreach (Entity meteor in meteors)
+                meteor.Draw();
         }
         private void StartGame()
         {
