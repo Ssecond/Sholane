@@ -11,8 +11,7 @@ namespace Sholane
 {
     internal class Game : GameWindow
     {
-        private const int offsetY = 70;
-        private const int offsetX = 35;
+        private const int OFFSET = 90;
         private int buttonsWidth = 200;
         private int buttonsHeight = 100;
         private Matrix4 ortho;
@@ -56,51 +55,49 @@ namespace Sholane
             int planeHeight = 28;
             int planeWidth = 60;
             while (planes.Count != 5)
-            {
-                int x, y;
-                do
-                {
-                    y = random.Next(0, this.Size.Y - planeHeight - rocket.Height * 2);
-                    x = random.Next(0, this.Size.X - planeWidth);
-                }
-                while (!allEntitiesFarAway(planes, x, y));
-                planes.Add(new Entity(planeWidth, planeHeight, new Texture("Content\\Plane.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.03f));
-            }
+                planes.Add(new Entity(planeWidth, planeHeight, new Texture("Content\\Plane.png"), genRandCoords(planes, planeHeight, planeWidth), BufferUsageHint.DynamicDraw, 0.03f));
+            
 
             platforms = new List<Entity>();
             int platformHeight = 10;
             int platformWidth = 103;
             while (platforms.Count != 6)
-            {
-                int x, y;
-                do
-                {
-                    y = random.Next(0, this.Size.Y - platformHeight - rocket.Height * 2);
-                    x = random.Next(0, this.Size.X - platformWidth);
-                }
-                while (!allEntitiesFarAway(platforms, x, y));
-                platforms.Add(new Entity(platformWidth, platformHeight, new Texture("Content\\Platform.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.05f));
-            }
+                platforms.Add(new Entity(platformWidth, platformHeight, new Texture("Content\\Platform.png"), genRandCoords(platforms, platformHeight, platformWidth), BufferUsageHint.DynamicDraw, 0.05f));
 
             meteors = new List<Entity>();
             int meteorHeight = 52;
             int meteormWidth = 13;
-            while (meteors.Count != 2)
+            while (meteors.Count != 4)
+                meteors.Add(new Entity(meteormWidth, meteorHeight, new Texture("Content\\Meteor.png"), genRandCoords(meteors, meteorHeight, meteormWidth), BufferUsageHint.DynamicDraw, 0.2f));
+        }
+        private Vector2 genRandCoords(List<Entity> entities, int height, int width)
+        {
+            Random random = new Random();
+            int x, y;
+            do
             {
-                int x, y;
-                do
-                {
-                    y = random.Next(0, this.Size.Y - meteorHeight - rocket.Height * 2);
-                    x = random.Next(0, this.Size.X - meteormWidth);
-                }
-                while (!allEntitiesFarAway(meteors, x, y));
-                meteors.Add(new Entity(meteormWidth, meteorHeight, new Texture("Content\\Meteor.png"), new Vector2(x, y), BufferUsageHint.DynamicDraw, 0.2f));
+                y = random.Next(0, this.Size.Y - height - rocket.Height * 2);
+                x = random.Next(0, this.Size.X - width);
             }
+            while (!allEntitiesFarAway(entities, x, y));
+            return new Vector2(x, y);
+        }
+        private Vector2 genRandCoords(List<Entity> entities, int width)
+        {
+            Random random = new Random();
+            int x;
+            do
+            {
+                x = random.Next(0, this.Size.X - width);
+            }
+            while (!allEntitiesFarAway(entities, x, 0));
+            return new Vector2(x, 0);
         }
         private bool allEntitiesFarAway(List<Entity> entities, int x, int y)
         {
+            Vector2 goalPostion = new Vector2(x, y);
             foreach (Entity entity in entities)
-                if (Math.Abs(entity.Position.X - x) < offsetX || Math.Abs(entity.Position.Y - y) < offsetY)
+                if (Vector2.Distance(goalPostion, entity.Position) < OFFSET)
                     return false;
             return true;
         }
@@ -154,15 +151,12 @@ namespace Sholane
             if (!gameNotStarted)
             {
                 lag += args.Time;
-                if (lag > timePerFrame)
+                while (lag >= timePerFrame)
                 {
-                    while (lag > timePerFrame)
-                    {
-                        MoveEntities(lastKeyboardState);
-                        gameBackground.Update(lag);
-                        rocket.Update(lag);
-                        lag -= timePerFrame;
-                    }
+                    MoveEntities();
+                    gameBackground.Update(lag);
+                    rocket.Update(lag);
+                    lag -= timePerFrame;
                 }
             }
             else if (lastKeyboardState == Keys.Enter)
@@ -197,7 +191,7 @@ namespace Sholane
         {
             return new Rectangle((int)entity.Position.X, (int)entity.Position.Y, entity.Width, entity.Height);
         }
-        private void MoveEntities(Keys key)
+        private void checkCollision()
         {
             for (int i = 0; i < planes.Count; i++)
                 if (getBounds(rocket).IntersectsWith(getBounds(planes[i])))
@@ -212,7 +206,8 @@ namespace Sholane
                     while (!allEntitiesFarAway(planes, x, y));
                     planes[i].Move(-planes[i].Position);
                     planes[i].Move(new Vector2(x, y));
-                    rocket.Move(-rocket.Position + new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
+                    rocket.Move(-rocket.Position);
+                    rocket.Move(new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
                     this.Title = "Очки: " + ++score;
                     break;
                 }
@@ -222,7 +217,52 @@ namespace Sholane
                     gameNotStarted = true;
                     break;
                 }
-            switch (key)
+            for (int i = 0; i < meteors.Count; i++)
+                if (getBounds(rocket).IntersectsWith(getBounds(meteors[i])))
+                {
+                    Random random = new Random();
+                    int x;
+                    do
+                    {
+                        x = random.Next(0, this.Size.X - meteors[i].Width);
+                    }
+                    while (!allEntitiesFarAway(meteors, x, 0));
+                    meteors[i].Move(-meteors[i].Position);
+                    meteors[i].Move(new Vector2(x, 0));
+
+                    rocket.Move(-rocket.Position);
+                    rocket.Move(new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
+                    this.Title = "Очки: " + --score;
+                }
+                else
+                {
+                    Entity platform = platforms.Find(platform => getBounds(platform).IntersectsWith(getBounds(meteors[i])));
+                    if (platform != null)
+                    {
+                        platform.Move(-platform.Position);
+                        platform.Move(genRandCoords(platforms, platform.Width));
+
+                        meteors[i].Move(-meteors[i].Position);
+                        meteors[i].Move(genRandCoords(platforms, meteors[i].Width));
+                    }
+                    else
+                    {
+                        Entity plane = planes.Find(plane => getBounds(plane).IntersectsWith(getBounds(meteors[i])));
+                        if (plane != null)
+                        {
+                            plane.Move(-plane.Position);
+                            plane.Move(genRandCoords(planes, plane.Width));
+
+                            meteors[i].Move(-meteors[i].Position);
+                            meteors[i].Move(genRandCoords(meteors, meteors[i].Width));
+                        }
+                    }
+                }
+        }
+        private void MoveEntities()
+        {
+            checkCollision();
+            switch (lastKeyboardState)
             {
                 case Keys.Up:
                 case Keys.W:
@@ -268,7 +308,7 @@ namespace Sholane
                     int x;
                     do
                     {
-                        x = random.Next(0, this.Size.X - platforms[i].Height);
+                        x = random.Next(0, this.Size.X - platforms[i].Width);
                     }
                     while (!allEntitiesFarAway(platforms, x, 0));
                     platforms[i].Move(-platforms[i].Position);
