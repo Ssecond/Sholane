@@ -11,7 +11,7 @@ namespace Sholane
 {
     internal class Game : GameWindow
     {
-        private const int OFFSET = 90;
+        private const int OFFSET = 80;
         private int buttonsWidth = 200;
         private int buttonsHeight = 100;
         private Matrix4 ortho;
@@ -19,15 +19,17 @@ namespace Sholane
         private List<Entity> planes;
         private List<Entity> platforms;
         private List<Entity> meteors;
-        private double lag = 0, timePerFrame = 0.001;
         private Keys lastKeyboardState;
         private bool gameNotStarted = true;
 
         private Entity gameMainMenuScreen;
-        Button start, exit;
+        private Button start, exit;
+
+        private delegate void GameEvent();
+        private event GameEvent meteorsFall;
 
         private static int score;
-        
+
         internal Game(GameWindowSettings gSettings, NativeWindowSettings nSettings) : base(gSettings, nSettings)
         {
             VSync = VSyncMode.On;
@@ -49,35 +51,41 @@ namespace Sholane
             this.Title = "Очки: " + score;
             rocket = new Entity(33, 60, new Texture("Content\\RocketSprite.png", 2, 1), new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
             gameBackground = new Entity(this.Size.X, this.Size.Y, new Texture("Content\\BackGroundSprite.png", 11, 2), Vector2.Zero);
-            Random random = new Random();
 
             planes = new List<Entity>();
             int planeHeight = 28;
             int planeWidth = 60;
-            while (planes.Count != 5)
+            while (planes.Count < 5)
                 planes.Add(new Entity(planeWidth, planeHeight, new Texture("Content\\Plane.png"), genRandCoords(planes, planeHeight, planeWidth), BufferUsageHint.DynamicDraw, 0.03f));
-            
+
 
             platforms = new List<Entity>();
             int platformHeight = 10;
             int platformWidth = 103;
-            while (platforms.Count != 6)
+            while (platforms.Count < 4)
                 platforms.Add(new Entity(platformWidth, platformHeight, new Texture("Content\\Platform.png"), genRandCoords(platforms, platformHeight, platformWidth), BufferUsageHint.DynamicDraw, 0.05f));
 
             meteors = new List<Entity>();
+            meteorsFall += spawnMeteors;
+        }
+        private void spawnMeteors()
+        {
             int meteorHeight = 52;
             int meteormWidth = 13;
-            while (meteors.Count != 4)
-                meteors.Add(new Entity(meteormWidth, meteorHeight, new Texture("Content\\Meteor.png"), genRandCoords(meteors, meteorHeight, meteormWidth), BufferUsageHint.DynamicDraw, 0.2f));
+            Random random = new Random();
+            while (meteors.Count < random.Next(0, 5 - meteors.Count))
+                meteors.Add(new Entity(meteormWidth, meteorHeight, new Texture("Content\\Meteor.png"), genRandCoords(meteors, meteormWidth), BufferUsageHint.DynamicDraw, 0.2f));
         }
         private Vector2 genRandCoords(List<Entity> entities, int height, int width)
         {
             Random random = new Random();
             int x, y;
+            int count = 0;
             do
             {
                 y = random.Next(0, this.Size.Y - height - rocket.Height * 2);
                 x = random.Next(0, this.Size.X - width);
+                count++;
             }
             while (!allEntitiesFarAway(entities, x, y));
             return new Vector2(x, y);
@@ -86,9 +94,11 @@ namespace Sholane
         {
             Random random = new Random();
             int x;
+            int count = 0;
             do
             {
                 x = random.Next(0, this.Size.X - width);
+                count++;
             }
             while (!allEntitiesFarAway(entities, x, 0));
             return new Vector2(x, 0);
@@ -139,6 +149,8 @@ namespace Sholane
             exit.Move(-exit.Position);
             exit.Move(new Vector2(this.Size.X / 2 - buttonsWidth / 2, this.Size.Y / 2 + 100));
         }
+        private double lag = 0, timePerFrame = 0.001;
+        private double eventsTime = 0;
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
@@ -151,12 +163,22 @@ namespace Sholane
             if (!gameNotStarted)
             {
                 lag += args.Time;
-                while (lag >= timePerFrame)
+                if (lag >= timePerFrame)
                 {
-                    MoveEntities();
-                    gameBackground.Update(lag);
-                    rocket.Update(lag);
-                    lag -= timePerFrame;
+                    eventsTime += lag;
+                    Random random = new Random();
+                    if (eventsTime >= random.Next(5, 20))
+                    {
+                        meteorsFall.Invoke();
+                        eventsTime = 0;
+                    }
+                    while (lag >= timePerFrame)
+                    {
+                        MoveEntities();
+                        gameBackground.Update(lag);
+                        rocket.Update(lag);
+                        lag -= timePerFrame;
+                    }
                 }
             }
             else if (lastKeyboardState == Keys.Enter)
@@ -196,16 +218,8 @@ namespace Sholane
             for (int i = 0; i < planes.Count; i++)
                 if (getBounds(rocket).IntersectsWith(getBounds(planes[i])))
                 {
-                    Random random = new Random();
-                    int x, y;
-                    do
-                    {
-                        y = random.Next(0, this.Size.Y - planes[i].Height - rocket.Height * 2);
-                        x = random.Next(0, this.Size.X - planes[i].Width);
-                    }
-                    while (!allEntitiesFarAway(planes, x, y));
                     planes[i].Move(-planes[i].Position);
-                    planes[i].Move(new Vector2(x, y));
+                    planes[i].Move(genRandCoords(planes, planes[i].Height, planes[i].Width));
                     rocket.Move(-rocket.Position);
                     rocket.Move(new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
                     this.Title = "Очки: " + ++score;
@@ -220,19 +234,12 @@ namespace Sholane
             for (int i = 0; i < meteors.Count; i++)
                 if (getBounds(rocket).IntersectsWith(getBounds(meteors[i])))
                 {
-                    Random random = new Random();
-                    int x;
-                    do
-                    {
-                        x = random.Next(0, this.Size.X - meteors[i].Width);
-                    }
-                    while (!allEntitiesFarAway(meteors, x, 0));
-                    meteors[i].Move(-meteors[i].Position);
-                    meteors[i].Move(new Vector2(x, 0));
-
                     rocket.Move(-rocket.Position);
                     rocket.Move(new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
                     this.Title = "Очки: " + --score;
+
+                    meteors[i].Dispose();
+                    meteors.RemoveAt(i);
                 }
                 else
                 {
@@ -242,8 +249,8 @@ namespace Sholane
                         platform.Move(-platform.Position);
                         platform.Move(genRandCoords(platforms, platform.Width));
 
-                        meteors[i].Move(-meteors[i].Position);
-                        meteors[i].Move(genRandCoords(platforms, meteors[i].Width));
+                        meteors[i].Dispose();
+                        meteors.RemoveAt(i);
                     }
                     else
                     {
@@ -253,8 +260,8 @@ namespace Sholane
                             plane.Move(-plane.Position);
                             plane.Move(genRandCoords(planes, plane.Width));
 
-                            meteors[i].Move(-meteors[i].Position);
-                            meteors[i].Move(genRandCoords(meteors, meteors[i].Width));
+                            meteors[i].Dispose();
+                            meteors.RemoveAt(i);
                         }
                     }
                 }
@@ -304,15 +311,8 @@ namespace Sholane
                     platforms[i].Move(new Vector2(0.0f, platforms[i].Speed));
                 else
                 {
-                    Random random = new Random();
-                    int x;
-                    do
-                    {
-                        x = random.Next(0, this.Size.X - platforms[i].Width);
-                    }
-                    while (!allEntitiesFarAway(platforms, x, 0));
                     platforms[i].Move(-platforms[i].Position);
-                    platforms[i].Move(new Vector2(x, 0));
+                    platforms[i].Move(genRandCoords(platforms, platforms[i].Width));
                 }
 
             for (int i = 0; i < meteors.Count; i++)
@@ -320,15 +320,8 @@ namespace Sholane
                     meteors[i].Move(new Vector2(0.0f, meteors[i].Speed));
                 else
                 {
-                    Random random = new Random();
-                    int x;
-                    do
-                    {
-                        x = random.Next(0, this.Size.X - meteors[i].Height);
-                    }
-                    while (!allEntitiesFarAway(meteors, x, 0));
                     meteors[i].Move(-meteors[i].Position);
-                    meteors[i].Move(new Vector2(x, 0));
+                    meteors[i].Move(genRandCoords(platforms, meteors[i].Width));
                 }
 
         }
