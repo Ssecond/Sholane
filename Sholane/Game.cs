@@ -19,6 +19,8 @@ namespace Sholane
         private List<Entity> planes;
         private List<Entity> platforms;
         private List<Entity> meteors;
+        private List<Entity> goodStars;
+        private List<Entity> badStars;
         private Keys lastKeyboardState;
         private bool gameNotStarted = true;
 
@@ -26,7 +28,8 @@ namespace Sholane
         private Button start, exit;
 
         private delegate void GameEvent();
-        private event GameEvent meteorsFall;
+        private event GameEvent MeteorsFall;
+        private event GameEvent StarsAppearing;
 
         private static int score;
 
@@ -66,7 +69,11 @@ namespace Sholane
                 platforms.Add(new Entity(platformWidth, platformHeight, new Texture("Content\\Platform.png"), genRandCoords(platforms, platformHeight, platformWidth), BufferUsageHint.DynamicDraw, 0.05f));
 
             meteors = new List<Entity>();
-            meteorsFall += spawnMeteors;
+            MeteorsFall = spawnMeteors;
+
+            goodStars = new List<Entity>();
+            badStars = new List<Entity>();
+            StarsAppearing = spawnStars;
         }
         private void spawnMeteors()
         {
@@ -76,16 +83,28 @@ namespace Sholane
             while (meteors.Count < random.Next(0, 5 - meteors.Count))
                 meteors.Add(new Entity(meteormWidth, meteorHeight, new Texture("Content\\Meteor.png"), genRandCoords(meteors, meteormWidth), BufferUsageHint.DynamicDraw, 0.2f));
         }
+        private void spawnStars()
+        {
+            Random random = new Random();
+            int starsSize = random.Next(15, 24);
+            if (goodStars.Count <= 3)
+            {
+                while (goodStars.Count < random.Next(0, 3 - goodStars.Count))
+                    goodStars.Add(new Entity(starsSize, starsSize, new Texture("Content\\GoodStar.png"), genRandCoords(goodStars, starsSize, starsSize), BufferUsageHint.DynamicDraw, 0.015f));
+            }
+            if (badStars.Count == 0)
+            {
+                badStars.Add(new Entity(starsSize, starsSize, new Texture("Content\\BadStar.png"), genRandCoords(badStars, starsSize, starsSize), BufferUsageHint.DynamicDraw, 0.015f));
+            }
+        }
         private Vector2 genRandCoords(List<Entity> entities, int height, int width)
         {
             Random random = new Random();
             int x, y;
-            int count = 0;
             do
             {
                 y = random.Next(0, this.Size.Y - height - rocket.Height * 2);
                 x = random.Next(0, this.Size.X - width);
-                count++;
             }
             while (!allEntitiesFarAway(entities, x, y));
             return new Vector2(x, y);
@@ -94,11 +113,9 @@ namespace Sholane
         {
             Random random = new Random();
             int x;
-            int count = 0;
             do
             {
                 x = random.Next(0, this.Size.X - width);
-                count++;
             }
             while (!allEntitiesFarAway(entities, x, 0));
             return new Vector2(x, 0);
@@ -167,9 +184,20 @@ namespace Sholane
                 {
                     eventsTime += lag;
                     Random random = new Random();
-                    if (eventsTime >= random.Next(5, 20))
+                    //if (eventsTime >= random.Next(5, 20))
+                    //{
+                    //    MeteorsFall.Invoke();
+                    //    eventsTime = 0;
+                    //}
+                    //else if (eventsTime >= random.Next(10, 20))
+                    //{
+                    //    StarsAppearing.Invoke();
+                    //    eventsTime = 0;
+                    //}
+
+                    if (eventsTime >= random.Next(5, 10))
                     {
-                        meteorsFall.Invoke();
+                        StarsAppearing.Invoke();
                         eventsTime = 0;
                     }
                     while (lag >= timePerFrame)
@@ -218,11 +246,12 @@ namespace Sholane
             for (int i = 0; i < planes.Count; i++)
                 if (getBounds(rocket).IntersectsWith(getBounds(planes[i])))
                 {
-                    planes[i].Move(-planes[i].Position);
-                    planes[i].Move(genRandCoords(planes, planes[i].Height, planes[i].Width));
                     rocket.Move(-rocket.Position);
                     rocket.Move(new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
                     this.Title = "Очки: " + ++score;
+
+                    planes[i].Move(-planes[i].Position);
+                    planes[i].Move(genRandCoords(planes, planes[i].Height, planes[i].Width));
                     break;
                 }
             for (int i = 0; i < platforms.Count; i++)
@@ -265,6 +294,32 @@ namespace Sholane
                         }
                     }
                 }
+            for (int i = 0; i < goodStars.Count; i++)
+                if (getBounds(rocket).IntersectsWith(getBounds(goodStars[i])))
+                {
+                    score += 3;
+                    this.Title = "Очки: " + score;
+
+                    goodStars[i].Dispose();
+                    goodStars.RemoveAt(i);
+                    break;
+                }
+            for (int i = 0; i < badStars.Count; i++)
+                if (getBounds(rocket).IntersectsWith(getBounds(badStars[i])))
+                {
+                    score -= 5;
+                    this.Title = "Очки: " + score;
+
+                    badStars[i].Dispose();
+                    badStars.RemoveAt(i);
+                    break;
+                }
+        }
+        private bool IsOutsideBoarder(float x, float y)
+        {
+            if (x < 0 || y < 0 || x > this.Size.X || y > this.Size.Y)
+                return true;
+            return false;
         }
         private void MoveEntities()
         {
@@ -273,30 +328,31 @@ namespace Sholane
             {
                 case Keys.Up:
                 case Keys.W:
-                    if (!OutsideBoarder(rocket.Position.X, rocket.Position.Y - rocket.Speed))
+                    if (!IsOutsideBoarder(rocket.Position.X, rocket.Position.Y - rocket.Speed))
                         rocket.Move(new Vector2(0.0f, -rocket.Speed));
                     break;
 
                 case Keys.Left:
                 case Keys.A:
-                    if (!OutsideBoarder(rocket.Position.X - rocket.Speed, rocket.Position.Y))
+                    if (!IsOutsideBoarder(rocket.Position.X - rocket.Speed, rocket.Position.Y))
                         rocket.Move(new Vector2(-rocket.Speed, 0.0f));
                     break;
 
                 case Keys.Down:
                 case Keys.S:
-                    if (!OutsideBoarder(rocket.Position.X, rocket.Position.Y + rocket.Speed + rocket.Height))
+                    if (!IsOutsideBoarder(rocket.Position.X, rocket.Position.Y + rocket.Speed + rocket.Height))
                         rocket.Move(new Vector2(0.0f, rocket.Speed));
                     break;
 
                 case Keys.Right:
                 case Keys.D:
-                    if (!OutsideBoarder(rocket.Position.X + rocket.Speed + rocket.Width, rocket.Position.Y))
+                    if (!IsOutsideBoarder(rocket.Position.X + rocket.Speed + rocket.Width, rocket.Position.Y))
                         rocket.Move(new Vector2(rocket.Speed, 0.0f));
                     break;
             }
+
             for (int i = 0; i < planes.Count; i++)
-                if (!OutsideBoarder(planes[i].Position.X + planes[i].Speed, planes[i].Position.Y))
+                if (!IsOutsideBoarder(planes[i].Position.X + planes[i].Speed, planes[i].Position.Y))
                     planes[i].Move(new Vector2(planes[i].Speed, planes[i].Speed));
                 else
                 {
@@ -307,7 +363,7 @@ namespace Sholane
                 }
 
             for (int i = 0; i < platforms.Count; i++)
-                if (!OutsideBoarder(platforms[i].Position.X + platforms[i].Speed, platforms[i].Position.Y))
+                if (!IsOutsideBoarder(platforms[i].Position.X + platforms[i].Speed, platforms[i].Position.Y))
                     platforms[i].Move(new Vector2(0.0f, platforms[i].Speed));
                 else
                 {
@@ -316,31 +372,45 @@ namespace Sholane
                 }
 
             for (int i = 0; i < meteors.Count; i++)
-                if (!OutsideBoarder(meteors[i].Position.X + meteors[i].Speed, meteors[i].Position.Y))
+                if (!IsOutsideBoarder(meteors[i].Position.X + meteors[i].Speed, meteors[i].Position.Y))
                     meteors[i].Move(new Vector2(0.0f, meteors[i].Speed));
                 else
                 {
-                    meteors[i].Move(-meteors[i].Position);
-                    meteors[i].Move(genRandCoords(platforms, meteors[i].Width));
+                    meteors[i].Dispose();
+                    meteors.RemoveAt(i);
                 }
 
+            for (int i = 0; i < goodStars.Count; i++)
+                if (!IsOutsideBoarder(goodStars[i].Position.X + goodStars[i].Speed, goodStars[i].Position.Y))
+                    goodStars[i].Move(new Vector2(0.0f, goodStars[i].Speed));
+                else
+                {
+                    goodStars[i].Dispose();
+                    goodStars.RemoveAt(i);
+                }
+            for (int i = 0; i < badStars.Count; i++)
+                if (!IsOutsideBoarder(badStars[i].Position.X + badStars[i].Speed, badStars[i].Position.Y))
+                    badStars[i].Move(new Vector2(0.0f, badStars[i].Speed));
+                else
+                {
+                    badStars[i].Dispose();
+                    badStars.RemoveAt(i);
+                }
         }
-        private bool OutsideBoarder(float x, float y)
+        private void DrawList(List<Entity> entities)
         {
-            if (x < 0 || y < 0 || x > this.Size.X || y > this.Size.Y)
-                return true;
-            return false;
+            foreach (Entity entity in entities)
+                entity.Draw();
         }
         private void PlaceObjectsOnMap()
         {
             gameBackground.Draw(0.015f);
             rocket.Draw(0.0045f);
-            foreach (Entity plane in planes)
-                plane.Draw();
-            foreach (Entity platform in platforms)
-                platform.Draw();
-            foreach (Entity meteor in meteors)
-                meteor.Draw();
+            DrawList(goodStars);
+            DrawList(badStars);
+            DrawList(planes);
+            DrawList(platforms);
+            DrawList(meteors);
         }
         private void StartGame()
         {
@@ -357,9 +427,9 @@ namespace Sholane
             base.OnMouseDown(e);
             if (gameNotStarted)
                 if (start.IsPointInFigure(cursorPosition))
-                    start.OnMouseDown.Invoke();
+                    start.OnMouseDownEvent();
                 else if (exit.IsPointInFigure(cursorPosition))
-                    exit.OnMouseDown.Invoke();
+                    exit.OnMouseDownEvent();
         }
         protected override void OnMouseMove(MouseMoveEventArgs e)
         {
