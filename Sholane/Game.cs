@@ -184,22 +184,13 @@ namespace Sholane
                 {
                     eventsTime += lag;
                     Random random = new Random();
-                    //if (eventsTime >= random.Next(5, 20))
-                    //{
-                    //    MeteorsFall.Invoke();
-                    //    eventsTime = 0;
-                    //}
-                    //else if (eventsTime >= random.Next(10, 20))
-                    //{
-                    //    StarsAppearing.Invoke();
-                    //    eventsTime = 0;
-                    //}
-
-                    if (eventsTime >= random.Next(5, 10))
-                    {
+                    if ((int)eventsTime == random.Next(5, 20))
+                        MeteorsFall.Invoke();
+                    else if ((int)eventsTime == random.Next(6, 30))
                         StarsAppearing.Invoke();
+                    else if (eventsTime > 60)
                         eventsTime = 0;
-                    }
+
                     while (lag >= timePerFrame)
                     {
                         MoveEntities();
@@ -241,6 +232,22 @@ namespace Sholane
         {
             return new Rectangle((int)entity.Position.X, (int)entity.Position.Y, entity.Width, entity.Height);
         }
+        private void checkScore(int lastScore, int newScore)
+        {
+            if (newScore < 0)
+                gameNotStarted = true;
+            else if (newScore / 10 - lastScore / 10 > 0)
+            {
+                timePerFrame /= 1.1f;
+                Console.WriteLine("Game time was sped up by 10%: " + timePerFrame);
+            }
+            else if (newScore / 10 - lastScore / 10 < 0)
+            {
+                timePerFrame *= 1.1f;
+                Console.WriteLine("Game time was slowed down by 10%: " + timePerFrame);
+            }
+            
+        }
         private void checkCollision()
         {
             for (int i = 0; i < planes.Count; i++)
@@ -248,7 +255,8 @@ namespace Sholane
                 {
                     rocket.Move(-rocket.Position);
                     rocket.Move(new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
-                    this.Title = "Очки: " + ++score;
+                    checkScore(score, ++score);
+                    this.Title = "Очки: " + score;
 
                     planes[i].Move(-planes[i].Position);
                     planes[i].Move(genRandCoords(planes, planes[i].Height, planes[i].Width));
@@ -265,7 +273,8 @@ namespace Sholane
                 {
                     rocket.Move(-rocket.Position);
                     rocket.Move(new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60));
-                    this.Title = "Очки: " + --score;
+                    checkScore(score, --score);
+                    this.Title = "Очки: " + score;
 
                     meteors[i].Dispose();
                     meteors.RemoveAt(i);
@@ -297,8 +306,11 @@ namespace Sholane
             for (int i = 0; i < goodStars.Count; i++)
                 if (getBounds(rocket).IntersectsWith(getBounds(goodStars[i])))
                 {
+                    checkScore(score, score + 3);
                     score += 3;
                     this.Title = "Очки: " + score;
+                    
+
 
                     goodStars[i].Dispose();
                     goodStars.RemoveAt(i);
@@ -307,8 +319,10 @@ namespace Sholane
             for (int i = 0; i < badStars.Count; i++)
                 if (getBounds(rocket).IntersectsWith(getBounds(badStars[i])))
                 {
+                    checkScore(score, score - 5);
                     score -= 5;
                     this.Title = "Очки: " + score;
+                    
 
                     badStars[i].Dispose();
                     badStars.RemoveAt(i);
