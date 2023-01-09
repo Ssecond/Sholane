@@ -40,16 +40,7 @@ namespace Sholane
         }
         private void InitializeGame()
         {
-            if (gameBackground != null)
-            {
-                gameBackground.Dispose();
-                rocket.Dispose();
-                foreach (Entity plane in planes)
-                    plane.Dispose();
-                foreach (Entity platform in platforms)
-                    platform.Dispose();
-            }
-
+            DeInitializeGame();
             score = 0;
             this.Title = "Очки: " + score;
             rocket = new Entity(33, 60, new Texture("Content\\RocketSprite.png", 2, 1), new Vector2(this.Size.X / 2 - 15, this.Size.Y - 60), BufferUsageHint.DynamicDraw, 0.08f);
@@ -74,6 +65,24 @@ namespace Sholane
             goodStars = new List<Entity>();
             badStars = new List<Entity>();
             StarsAppearing = spawnStars;
+        }
+        private void DeInitializeGame()
+        {
+            if (gameBackground != null)
+            {
+                gameBackground.Dispose();
+                rocket.Dispose();
+                foreach (Entity plane in planes)
+                    plane.Dispose();
+                foreach (Entity platform in platforms)
+                    platform.Dispose();
+                foreach (Entity meteor in meteors)
+                    meteor.Dispose();
+                foreach (Entity badStar in badStars)
+                    badStar.Dispose();
+                foreach (Entity goodStar in goodStars)
+                    goodStar.Dispose();
+            }
         }
         private void spawnMeteors()
         {
@@ -144,6 +153,10 @@ namespace Sholane
         protected override void OnUnload()
         {
             base.OnUnload();
+            DeInitializeGame();
+            gameMainMenuScreen.Dispose();
+            start.Dispose();
+            exit.Dispose();
         }
         protected override void OnResize(ResizeEventArgs e)
         {
@@ -235,7 +248,9 @@ namespace Sholane
         private void checkScore(int lastScore, int newScore)
         {
             if (newScore < 0)
+            {
                 gameNotStarted = true;
+            }
             else if (newScore / 10 - lastScore / 10 > 0)
             {
                 timePerFrame /= 1.1f;
